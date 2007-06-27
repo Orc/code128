@@ -1,0 +1,25 @@
+CC=@CC@
+BINDIR=@exedir@
+LIBS=@LIBS@
+CFLAGS=@CFLAGS@
+LDFLAGS=@LDFLAGS@
+
+PGMS=code128
+
+OBJS=code128.o
+
+all: $(PGMS)
+
+code128: $(OBJS)
+	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+
+install: $(PGMS) $(BINDIR)
+	@INSTALL_PROGRAM@ $(PGMS) $(BINDIR)
+
+clean:
+	rm -f *.o $(PGMS)
+
+distclean spotless: clean
+	rm -f readconfig.* @CONFIGURE_FILES@ @GENERATED_FILES@
+
+code128.o: code128.c code128.h
