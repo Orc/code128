@@ -9,7 +9,6 @@
 #
 TARGET=code128
 
-test -r configure.inc || test -d SCCS && get configure.inc
 . ./configure.inc
 
 
