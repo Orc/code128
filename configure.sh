@@ -33,7 +33,7 @@ fi
 # gd can have a bucketload of dependencies on other libraries, and if it's a
 # shared library ALL OF THEM need to be linked in.
 echo "main() { }" > ngc$$.c
-for x in -lz -lpng -ljpeg -ltiff -lta; do
+for x in -lz -lpng -ljpeg -ltiff -lxpm -lwebp -limagequant -lfontconfig -lfreetype -lraqm; do
     $AC_CC $AC_CFLAGS -o ngc$$ ngc$$.c $x && LIBS="$LIBS $x"
 done
 rm -f ngc$$.c ngc$$
