@@ -1,0 +1,13 @@
+Code128 is a tiny utility program that generates barcodes in CODE128
+format (using the libgd graphics library to do the drawing.)
+
+usage: code128 scale "text"
+
+The barcode, by default, is an image 35 pixels high + however many pixels
+wide it takes to encode the string.  You can make the barcode larger by
+supplying a scale > 1.
+
+
+To build, do
+		./configure.sh
+		make

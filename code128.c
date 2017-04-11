@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <string.h>
+#include <stdarg.h>
 #include "config.h"
 #include "code128.h"
 
@@ -180,6 +182,21 @@ add(gdImagePtr barcode, char *s)
 }
 
 
+char *pgm;
+
+die(char *msg, ...)
+{
+    va_list ptr;
+
+    fprintf(stderr, "%s: ", pgm);
+    va_start(ptr, msg);
+    vfprintf(stderr, msg, ptr);
+    va_end(ptr);
+    fputc('\n', stderr);
+    exit(1);
+}
+
+
 
 main(int argc, char **argv)
 {
@@ -194,19 +211,21 @@ main(int argc, char **argv)
     gdPoint pt[4];
     FILE *f;
 
-    if (argc < 3) {
-	fprintf(stderr, "usage: 128 height string\n");
-	exit(1);
-    }
-    if ( (barwidth = atoi(argv[1])) < 1) {
-	fprintf(stderr, "code128: bad height\n");
-	exit(1);
-    }
+    if (( pgm = strrchr(argv[0], '/') ))
+	++pgm;
+    else
+	pgm = argv[0];
 
-    if ( (width = width128(argv[2])) < 0) {
-	fprintf(stderr, "code128: illegal character in <%s>\n", argv[2]);
+    if (argc < 3) {
+	fprintf(stderr, "usage: %s scale string\n", pgm);
 	exit(1);
     }
+    if ( (barwidth = atoi(argv[1])) < 1)
+	die("bad scale <%s>", argv[1]);
+
+    if ( (width = width128(argv[2])) < 0)
+	die("illegal (non-ascii) character in <%s>", argv[2]);
+
     width *= 11;	/* convert to pixel width */
     width += 24;	/* add 11 for checksum, 13 for EOM*/
 
