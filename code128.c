@@ -244,10 +244,12 @@ main(int argc, char **argv)
     add(barcode,code128[ch].encode);
     add(barcode,"2331112");
 
-#if GD_SUPPORTS_GIF
-    gdImageGif(barcode, stdout);
-#else
+#if GD_SUPPORTS_PNG
+    gdImagePng(barcode, stdout);
+#elif GD_SUPPORTS_JPEG
     gdImageJpeg(barcode, stdout, 70);
+#elif GD_SUPPORTS_GIF
+    gdImageGif(barcode, stdout);
 #endif
     exit(0);
 }
