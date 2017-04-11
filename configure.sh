@@ -12,11 +12,15 @@ TARGET=code128
 . ./configure.inc
 
 AC_INIT $TARGET
+unset _MK_LIBRARIAN
 
+# make sure that the math libraries are included
 case "$AC_LDFLAGS" in
 *-lm*) ;;
 *) AC_LDFLAGS="$AC_LDFLAGS -lm" ;;
 esac
+
+AC_PROG_CC
 
 if AC_CHECK_HEADERS gd.h; then
     AC_TEXT "#include <gd.h>"
