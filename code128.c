@@ -101,22 +101,34 @@ struct code128 code128[] = {
 	{ 29 , '}', 93 , "111341" },
 	{ 30 , '~', 94 , "131141" },
 	{ 31 , 127, 95 , "114113" },
-#if 0
+
 /*96*/  {FNC3,FNC3, 96 , "114311" },
 /*97*/  {FNC2,FNC2, 97 , "411113" },
 /*98*/  {SHIFT,SHIFT,98, "411311" },
 /*99*/  {CODEC,CODEC,99, "113141" },
-/*100*/ {CODEB,FNC4,CODEB},"114131" },
-/*101*/ {FNC4,CODEA,CODEA},"311141" },
+/*100*/ {CODEB,FNC4,CODEB,"114131" },
+/*101*/ {FNC4,CODEA,CODEA,"311141" },
 /*102*/ {FNC1,FNC1,FNC1, "411131" },
 /*103*/ {STARTA,STARTA,STARTA, "211412" },
 /*104*/ {STARTB,STARTB,STARTB, "211214" },
 /*105*/ {STARTC,STARTC,STARTC, "211412" },
-/*106*/ {STOP,STOP,STOP}  "2331112" },
-#endif
+/*106*/ {STOP,STOP,STOP, "2331112" },
 } ;
 
 #define SZ128 (sizeof code128/sizeof code128[0])
+#define CODEPT	96
+
+int
+controlpoint(int c)
+{
+    int i;
+
+    for (i=CODEPT; i < SZ128; i++)
+	if (code128[i].codeA == c || code128[i].codeB == c|| code128[i].codeC == c )
+	    return i;
+    return 0;
+}
+
 
 
 int
@@ -130,7 +142,7 @@ width128(char *p)
     for (; *p; ++p) {
 	ch =  0x7f & *p;
 
-	for (i=0; i < SZ128; i++) {
+	for (i=0; i < CODEPT; i++) {
 	    if (ch == code128[i].codeB) {
 		if (code != CODEB)
 		    sz++;
@@ -205,7 +217,7 @@ main(int argc, char **argv)
     int code = 0;
     char *p;
     int ch;
-    int sum;
+    int sum, clock;
     int width;
     gdImagePtr barcode;
     gdPoint pt[4];
@@ -227,23 +239,27 @@ main(int argc, char **argv)
 	die("illegal (non-ascii) character in <%s>", argv[2]);
 
     width *= 11;	/* convert to pixel width */
-    width += 24;	/* add 11 for checksum, 13 for EOM*/
+    width += 44;	/* add 20 for quiet zones, 11 for checksum, 13 for EOM*/
 
     height = barwidth*35;
     width *= barwidth;
+    xp = 10 * barwidth;
 
     barcode = gdImageCreate( width, height);
     white = gdImageColorAllocate(barcode,255,255,255);
     gdImageColorTransparent(barcode, white);
     black = gdImageColorAllocate(barcode, 0, 0, 0);
 
-    for (dx=1, sum=104, p=argv[2]; *p; ++p) {
+    for (sum=0, clock=1, p=argv[2]; *p; ++p) {
 	ch = *p & 0x7f;
 
-	for (i = 0; i < SZ128; i++) {
+	for (i = 0; i < CODEPT; i++) {
 	    if (ch == code128[i].codeB) {
 		if (code != CODEB) {
 		    add(barcode, code ? "114131" : "211214");
+		    sum += controlpoint(code ? CODEB : STARTB) * clock;
+		    if (code)
+			++clock;
 		    code = CODEB;
 		}
 		break;
@@ -251,13 +267,16 @@ main(int argc, char **argv)
 	    else if (ch == code128[i].codeA) {
 		if (code != CODEA) {
 		    add(barcode,code ? "311141" : "211412");
+		    sum += controlpoint(code ? CODEA : STARTA) * clock;
+		    if (code)
+			++clock;
 		    code = CODEA;
 		}
 		break;
 	    }
 	}
 	add(barcode,code128[i].encode);
-	sum += (dx*ch);
+	sum += i * (clock++);
     }
     ch = sum % 103;
     add(barcode,code128[ch].encode);
