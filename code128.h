@@ -2,7 +2,7 @@ struct code128 {
     unsigned char  codeA;
     unsigned char  codeB;
     unsigned short codeC;
-    unsigned char  encode[7];
+    char  *encode;
 };
 #define FNC1	240
 #define FNC2	241

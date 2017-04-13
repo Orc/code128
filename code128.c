@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <ctype.h>
 #include "config.h"
 #include "code128.h"
 
@@ -160,6 +161,7 @@ digitpair(char *p)
 
 char *pgm;
 
+void
 die(char *msg, ...)
 {
     va_list ptr;
@@ -268,6 +270,7 @@ static int barwidth;
 static int height;
 static int xp = 0;
 
+void
 add(gdImagePtr barcode, char *s)
 {
     gdPoint pt[4];
@@ -294,6 +297,7 @@ add(gdImagePtr barcode, char *s)
 }
 
 
+int
 main(int argc, char **argv)
 {
     int i;
