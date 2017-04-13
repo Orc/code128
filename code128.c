@@ -111,7 +111,7 @@ struct code128 code128[] = {
 /*102*/ {FNC1,FNC1,FNC1, "411131" },
 /*103*/ {STARTA,STARTA,STARTA, "211412" },
 /*104*/ {STARTB,STARTB,STARTB, "211214" },
-/*105*/ {STARTC,STARTC,STARTC, "211412" },
+/*105*/ {STARTC,STARTC,STARTC, "211232" },
 /*106*/ {STOP,STOP,STOP, "2331112" },
 } ;
 
@@ -129,39 +129,140 @@ controlpoint(int c)
     return 0;
 }
 
+int
+codeA(int c)
+{
+    int i;
+
+    for (i=0; i<CODEPT; i++)
+	if ( code128[i].codeA == c )
+	    return i;
+    return -1;
+}
+
+int
+codeB(int c)
+{
+    int i;
+
+    for (i=0; i<CODEPT; i++)
+	if ( code128[i].codeB == c )
+	    return i;
+    return -1;
+}
 
 
 int
-width128(char *p)
+digitpair(char *p)
 {
-    unsigned int ch;
-    int code = 0;
-    unsigned int sz = 0;
+    return ((p[0]-'0')*10) + (p[1]-'0');
+}
+
+
+char *pgm;
+
+die(char *msg, ...)
+{
+    va_list ptr;
+
+    fprintf(stderr, "%s: ", pgm);
+    va_start(ptr, msg);
+    vfprintf(stderr, msg, ptr);
+    va_end(ptr);
+    fputc('\n', stderr);
+    exit(1);
+}
+
+
+int
+codefor(int c)
+{
     int i;
 
-    for (; *p; ++p) {
-	ch =  0x7f & *p;
+    for ( i=0; i < CODEPT; i++ ) {
+	if ( code128[i].codeA == c )
+	    return CODEA;
+	else if ( code128[i].codeB == c )
+	    return CODEB;
+    }
+    return -1;
+}
 
-	for (i=0; i < CODEPT; i++) {
-	    if (ch == code128[i].codeB) {
-		if (code != CODEB)
-		    sz++;
-		code = CODEB;
-		sz++;
-		break;
-	    }
-	    else if (ch == code128[i].codeA) {
-		if (code != CODEA)
-		    sz++;
-		code = CODEA;
-		sz++;
-		break;
+
+
+int
+code128string(char *p, char **res)
+{
+    int code = 0;
+    char *out = malloc(1+(strlen(p) * 2));
+    int i, sz;
+    unsigned int ch;
+
+    if ( out == 0 ) {
+	die("cannot allocate buffer for code 128 string");
+	return -1;
+    }
+
+
+    for ( sz=0; *p; ++p ) {
+	if ( isdigit(*p) ) {
+	    /* CODEC check */
+	    int j;
+
+	    for (j=1; isdigit(p[j]); ++j)
+		;
+
+	    if ( j >= ( (code && p[j]) ? 6 : 4) ) {
+		/* not worth our while unless there are at least six digits
+		 * to compress (4 if at start/end of text)
+		 */
+		out[sz++] = code ? controlpoint(CODEC) : controlpoint(STARTC);
+		code = CODEC;
+		while ( j > 1 ) {
+		    out[sz++] = digitpair(p);
+		    j-=2;
+		    p += 2;
+		}
+		--p;
+		continue;
 	    }
 	}
-	if (i == SZ128) return -1;
+	
+	ch = *p;
+
+	if  ( (i = codeA(ch)) >= 0 ) {
+	    if ( code != CODEA ) {
+		if ( codefor(p[1]) == code ) {
+		    /* shift for single character code flips */
+		    out[sz++] = controlpoint(SHIFT);
+		}
+		else {
+		    out[sz++] = code ? controlpoint(CODEA) : controlpoint(STARTA);
+		    code = CODEA;
+		}
+	    }
+	    out[sz++] = i;
+	}
+	else if ( (i = codeB(ch)) >= 0 ) {
+	    if ( code != CODEB ) {
+		if ( codefor(p[1]) == code ) {
+		    /* shift for single character code flips */
+		    out[sz++] = controlpoint(SHIFT);
+		}
+		else {
+		    out[sz++] = code ? controlpoint(CODEB) : controlpoint(STARTB);
+		    code = CODEB;
+		}
+	    }
+	    out[sz++] = i;
+	}
+	else  /* whoops? canthappen? */
+	    die("illegal (non-ascii) character $%02x (after %d chars)", ch, sz);
     }
+    *res = out;
     return sz;
 }
+
 
 static int black, white;
 static int barwidth;
@@ -182,8 +283,8 @@ add(gdImagePtr barcode, char *s)
 	dx = barwidth * e;
 	sz += e;
 	if (color) {
-	    pt[0].x = xp;    pt[0].y = barwidth;
-	    pt[1].x = xp+dx-1; pt[1].y = barwidth;
+	    pt[0].x = xp;    pt[0].y = 0;
+	    pt[1].x = xp+dx-1; pt[1].y = 0;
 	    pt[2].x = xp+dx-1; pt[2].y = height;
 	    pt[3].x = xp;    pt[3].y = height;
 	    gdImageFilledPolygon(barcode, pt, 4, color ? black : white);
@@ -194,31 +295,12 @@ add(gdImagePtr barcode, char *s)
 }
 
 
-char *pgm;
-
-die(char *msg, ...)
-{
-    va_list ptr;
-
-    fprintf(stderr, "%s: ", pgm);
-    va_start(ptr, msg);
-    vfprintf(stderr, msg, ptr);
-    va_end(ptr);
-    fputc('\n', stderr);
-    exit(1);
-}
-
-
-
 main(int argc, char **argv)
 {
     int i;
-    int dx;
-    int code = 0;
-    char *p;
-    int ch;
-    int sum, clock;
+    int sum, size;
     int width;
+    char *encoded;
     gdImagePtr barcode;
     gdPoint pt[4];
     FILE *f;
@@ -235,11 +317,10 @@ main(int argc, char **argv)
     if ( (barwidth = atoi(argv[1])) < 1)
 	die("bad scale <%s>", argv[1]);
 
-    if ( (width = width128(argv[2])) < 0)
-	die("illegal (non-ascii) character in <%s>", argv[2]);
+    size = code128string(argv[2], &encoded);
 
-    width *= 11;	/* convert to pixel width */
-    width += 44;	/* add 20 for quiet zones, 11 for checksum, 13 for EOM*/
+    /* convert to pixel width, add 20 for quiet zones, 11 for checksum, 13 for EOM */
+    width = (size * 11) + 44;
 
     height = barwidth*35;
     width *= barwidth;
@@ -250,36 +331,12 @@ main(int argc, char **argv)
     gdImageColorTransparent(barcode, white);
     black = gdImageColorAllocate(barcode, 0, 0, 0);
 
-    for (sum=0, clock=1, p=argv[2]; *p; ++p) {
-	ch = *p & 0x7f;
-
-	for (i = 0; i < CODEPT; i++) {
-	    if (ch == code128[i].codeB) {
-		if (code != CODEB) {
-		    add(barcode, code ? "114131" : "211214");
-		    sum += controlpoint(code ? CODEB : STARTB) * clock;
-		    if (code)
-			++clock;
-		    code = CODEB;
-		}
-		break;
-	    }
-	    else if (ch == code128[i].codeA) {
-		if (code != CODEA) {
-		    add(barcode,code ? "311141" : "211412");
-		    sum += controlpoint(code ? CODEA : STARTA) * clock;
-		    if (code)
-			++clock;
-		    code = CODEA;
-		}
-		break;
-	    }
-	}
-	add(barcode,code128[i].encode);
-	sum += i * (clock++);
+    for (sum=i=0; i < size; ++i) {
+	add(barcode, code128[encoded[i]].encode);
+	sum += (encoded[i]) * (i ? i : 1);
     }
-    ch = sum % 103;
-    add(barcode,code128[ch].encode);
+    sum %= 103;
+    add(barcode,code128[sum].encode);
     add(barcode,"2331112");
 
 #if GD_SUPPORTS_PNG
