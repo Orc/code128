@@ -48,5 +48,18 @@ main()
     for (i=0; i < CODEPT; i++)
 	tab[code128[i].codeB] = i;
     tabprint("codeBmap", tab, SZ(tab));
+
+    memset(tab, 0, sizeof tab);
+    for ( i=CODEPT; i < SZ(code128); i++ ) {
+	tab[code128[i].codeA] = i;
+	tab[code128[i].codeB] = i;
+	/* the codeC alphabet overlaps the control
+	 * points array by a few elements, so don't
+	 * include them
+	 */
+	if ( code128[i].codeC & 0x80 )
+	    tab[code128[i].codeC] = i;
+    }
+    tabprint("controlmap", tab, SZ(tab));
     return 0;
 }

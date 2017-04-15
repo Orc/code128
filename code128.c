@@ -8,12 +8,7 @@
 int
 controlpoint(int c)
 {
-    int i;
-
-    for (i=CODEPT; i < SZ128; i++)
-	if (code128[i].codeA == c || code128[i].codeB == c|| code128[i].codeC == c )
-	    return i;
-    return 0;
+    return controlmap[c];
 }
 
 int

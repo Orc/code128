@@ -134,3 +134,4 @@ struct code128 code128[] = {
 
 extern int codeAmap[];
 extern int codeBmap[];
+extern int controlmap[];
