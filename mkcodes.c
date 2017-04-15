@@ -14,7 +14,7 @@ tabprint(char *label, int *tab, int sztab)
 	printf("%2d,", tab[i]);
 	if ( i % 16 == 15)
 	    putchar('\n');
-	else
+	else if ( tab[i] < 100)
 	    putchar(' ');
     }
     printf("};\n\n");
