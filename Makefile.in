@@ -6,20 +6,27 @@ LDFLAGS=@LDFLAGS@
 
 PGMS=code128
 
-OBJS=code128.o
+OBJS=table.o code128.o
 
 all: $(PGMS)
 
 code128: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
+table.c: mkcodes
+	./mkcodes > table.c
+
+mkcodes: mkcodes.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
+
 install: $(PGMS) $(BINDIR)
 	@INSTALL_PROGRAM@ $(PGMS) $(BINDIR)
 
 clean:
-	rm -f *.o $(PGMS)
+	rm -f *.o $(PGMS) table.c table.o mkcodes
 
 distclean spotless: clean
 	rm -f readconfig.* @CONFIGURE_FILES@ @GENERATED_FILES@
 
 code128.o: code128.c code128.h config.h
+table.o: table.c code128.h
