@@ -236,9 +236,9 @@ main(int argc, char **argv)
 #if GD_SUPPORTS_PNG
     output = PNG;
 #elif GD_SUPPORTS_JPEG
-    output = JPEG
+    output = JPEG;
 #else
-    output = GIF
+    output = GIF;
 #endif
 
     if (( pgm = strrchr(argv[0], '/') ))
