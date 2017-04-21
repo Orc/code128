@@ -192,7 +192,7 @@ int nropts;
 void
 hoptusage(char *pgm, struct h_opt opts[], int nropts, char *arguments)
 {
-    int i;
+    int i, j;
     int optcount;
     
     fprintf(stderr, "usage: %s", pgm);
@@ -221,6 +221,13 @@ hoptusage(char *pgm, struct h_opt opts[], int nropts, char *arguments)
 	    fprintf(stderr, " [--%s", opts[i].optword);
 	    if ( opts[i].opthasarg )
 		fprintf(stderr, " %s", opts[i].opthasarg);
+	    else {
+		for ( j=1+i; j < nropts; j++ )
+		    if ( opts[j].option == opts[i].option ) {
+			fprintf(stderr, "|%s", opts[j].optword);
+			opts[j].optword = 0;
+		    }
+	    }
 	    fputc(']', stderr);
 	}
 
