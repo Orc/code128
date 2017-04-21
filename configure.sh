@@ -41,14 +41,20 @@ rm -f ngc$$.c ngc$$
 AC_LIBRARY gdImageCreate -lgd || exit 1
 
 
+unset oformat
 if AC_CHECK_FUNCS gdImagePng; then
     AC_DEFINE GD_SUPPORTS_PNG 1
-elif AC_CHECK_FUNCS gdImageJpeg; then
-    AC_DEFINE GD_SUPPORTS_GIF 1
-elif AC_CHECK_FUNCS gdImageGif; then
-    AC_DEFINE GD_SUPPORTS_GIF 1
-else
-    AC_FAIL "The copy of libgd here does not support GIF, JPG, or PNG format."
+    oformat=1
 fi
+if AC_CHECK_FUNCS gdImageJpeg; then
+    AC_DEFINE GD_SUPPORTS_JPEG 1
+    oformat=1
+fi
+if AC_CHECK_FUNCS gdImageGif; then
+    AC_DEFINE GD_SUPPORTS_GIF 1
+    oformat=1
+fi
+
+test "$oformat" || AC_FAIL "The copy of libgd here does not support GIF, JPG, or PNG format."
 
 AC_OUTPUT Makefile

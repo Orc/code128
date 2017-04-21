@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include "config.h"
 #include "code128.h"
+#include "gethopt.h"
 
 int
 controlpoint(int c)
@@ -193,10 +194,31 @@ add(gdImagePtr barcode, char *s)
     }
 }
 
+struct h_opt opts[] = {
+#if GD_SUPPORTS_JPEG
+    { 0, "jpeg",  'j', 0, "write the barcode in jpeg format" },
+    { 0, "jpg",    0,  0, "(synonym for -jpeg)" },
+#endif
+#if GD_SUPPORTS_GIF
+    { 1, "GIF",   'g', 0, "write the barcode in GIF format" },
+    { 1, "gif",    0,  0, "(synonym for -GIF)" },
+#endif
+#if GD_SUPPORTS_PNG
+    { 2, "png",   'p', 0, "write the barcode in PNG format" },
+#endif
+    { 3, "help",  '?', 0, "help message" },
+} ;
+
+#define NROPT (sizeof opts/sizeof opts[0])
+
+
+
+
 
 int
 main(int argc, char **argv)
 {
+    enum { GIF, JPEG, PNG } output = GIF;
     int i;
     int sum, size;
     int width;
@@ -204,14 +226,35 @@ main(int argc, char **argv)
     gdImagePtr barcode;
     gdPoint pt[4];
     FILE *f;
+    struct h_opt *opt;
+    struct h_context args;
 
     if (( pgm = strrchr(argv[0], '/') ))
 	++pgm;
     else
 	pgm = argv[0];
 
+    hoptset(&args, argc, argv);
+    hopterr(&args, 1);
+    
+    while ( opt = gethopt(&args, opts, NROPT) ) {
+	if ( opt == HOPTERR )
+	    exit(1);
+
+	switch ( opt->option ) {
+	case 0: output = JPEG;
+		break;
+	case 1: output = GIF;
+		break;
+	case 2: output = PNG;
+		break;
+	case 3: hoptusage(pgm, opts, NROPT, "scale string");
+		exit(0);
+	}
+    }
+
     if (argc < 3) {
-	fprintf(stderr, "usage: %s scale string\n", pgm);
+	hoptusage(pgm, opts, NROPT, "scale string");
 	exit(1);
     }
     if ( (barwidth = atoi(argv[1])) < 1)
@@ -239,12 +282,19 @@ main(int argc, char **argv)
     add(barcode,code128[sum].encode);
     add(barcode,"2331112");
 
+    switch (output) {
 #if GD_SUPPORTS_PNG
-    gdImagePng(barcode, stdout);
+    case PNG:   gdImagePng(barcode, stdout);
+		break;
 #elif GD_SUPPORTS_JPEG
-    gdImageJpeg(barcode, stdout, 70);
+    case JPEG:  gdImageJpeg(barcode, stdout, 70);
+		break;
 #elif GD_SUPPORTS_GIF
-    gdImageGif(barcode, stdout);
+    case GIF:	gdImageGif(barcode, stdout);
+		break;
 #endif
+    default:    die("unsupported output format %d", output);
+		exit(1);
+    }
     exit(0);
 }
