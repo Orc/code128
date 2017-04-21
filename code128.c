@@ -219,7 +219,8 @@ struct h_opt opts[] = {
 int
 main(int argc, char **argv)
 {
-    enum { GIF, JPEG, PNG } output = GIF;
+    enum { GIF, JPEG, PNG } output;
+    char *imagetype[] = { "GIF", "JPEG", "PNG" };
     int i;
     int sum, size;
     int width;
@@ -231,6 +232,14 @@ main(int argc, char **argv)
     struct h_context args;
 
     extern char version[];
+
+#if GD_SUPPORTS_PNG
+    output = PNG;
+#elif GD_SUPPORTS_JPEG
+    output = JPEG
+#else
+    output = GIF
+#endif
 
     if (( pgm = strrchr(argv[0], '/') ))
 	++pgm;
@@ -253,7 +262,7 @@ main(int argc, char **argv)
 		break;
 	case 3: hoptusage(pgm, opts, NROPT, "scale string");
 		exit(0);
-	case 4: puts(version);
+	case 4: printf("%s (%s)\n", version, imagetype[output]);
 		exit(0);
 	}
     }
