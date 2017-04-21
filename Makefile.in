@@ -6,7 +6,7 @@ LDFLAGS=@LDFLAGS@
 
 PGMS=code128
 
-OBJS=table.o code128.o gethopt.o
+OBJS=table.o code128.o gethopt.o version.o
 
 all: $(PGMS)
 
@@ -28,6 +28,10 @@ clean:
 distclean spotless: clean
 	rm -f readconfig.* @CONFIGURE_FILES@ @GENERATED_FILES@
 
+version.c: VERSION
+	@echo 'char version[]="'`cat VERSION`'";' > version.c
+
 code128.o: code128.c code128.h config.h gethopt.h
 table.o: table.c code128.h
 gethopt.o: gethopt.c gethopt.h
+version.o: version.c

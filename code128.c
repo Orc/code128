@@ -196,17 +196,18 @@ add(gdImagePtr barcode, char *s)
 
 struct h_opt opts[] = {
 #if GD_SUPPORTS_JPEG
-    { 0, "jpeg",  'j', 0, "write the barcode in jpeg format" },
-    { 0, "jpg",    0,  0, "(synonym for -jpeg)" },
+    { 0, "jpeg",   'j', 0, "write the barcode in jpeg format" },
+    { 0, "jpg",     0,  0, "(synonym for -jpeg)" },
 #endif
 #if GD_SUPPORTS_GIF
-    { 1, "GIF",   'g', 0, "write the barcode in GIF format" },
-    { 1, "gif",    0,  0, "(synonym for -GIF)" },
+    { 1, "GIF",    'g', 0, "write the barcode in GIF format" },
+    { 1, "gif",     0,  0, "(synonym for -GIF)" },
 #endif
 #if GD_SUPPORTS_PNG
-    { 2, "png",   'p', 0, "write the barcode in PNG format" },
+    { 2, "png",    'p', 0, "write the barcode in PNG format" },
 #endif
-    { 3, "help",  '?', 0, "help message" },
+    { 3, "help",   '?', 0, "help message" },
+    { 4, "version",'V', 0, "print the version#, then exit" },
 } ;
 
 #define NROPT (sizeof opts/sizeof opts[0])
@@ -229,6 +230,8 @@ main(int argc, char **argv)
     struct h_opt *opt;
     struct h_context args;
 
+    extern char version[];
+
     if (( pgm = strrchr(argv[0], '/') ))
 	++pgm;
     else
@@ -249,6 +252,8 @@ main(int argc, char **argv)
 	case 2: output = PNG;
 		break;
 	case 3: hoptusage(pgm, opts, NROPT, "scale string");
+		exit(0);
+	case 4: puts(version);
 		exit(0);
 	}
     }
