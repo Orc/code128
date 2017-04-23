@@ -59,18 +59,17 @@ AC_LIBRARY gdImageCreate -lgd || exit 1
 
 
 unset oformat
-comma=,
 if AC_QUIET AC_CHECK_FUNCS gdImagePng; then
     AC_DEFINE GD_SUPPORTS_PNG 1
     oformat="png"
 fi
 if AC_QUIET AC_CHECK_FUNCS gdImageJpeg; then
     AC_DEFINE GD_SUPPORTS_JPEG 1
-    oformat="${oformat:+comma}jpeg"
+    oformat="${oformat}${oformat:+, }jpeg"
 fi
 if AC_QUIET AC_CHECK_FUNCS gdImageGif; then
     AC_DEFINE GD_SUPPORTS_GIF 1
-    oformat="${oformat:+comma}gif"
+    oformat="${oformat}${oformat:+, }gif"
 fi
 
 test "$oformat" || AC_FAIL "The copy of libgd here does not support GIF, JPG, or PNG format."
