@@ -12,15 +12,32 @@ TARGET=code128
 . ./configure.inc
 
 AC_INIT $TARGET
+
+AC_PROG_CC
 unset _MK_LIBRARIAN
 
 # make sure that the math libraries are included
-case "$AC_LDFLAGS" in
+case "$AC_LDFLAGS $LIBS" in
 *-lm*) ;;
 *) LIBS="$LIBS -lm" ;;
 esac
 
-AC_PROG_CC
+if [ "IS_BROKEN_CC" ]; then
+    case "$AC_CC $AC_CFLAGS" in
+    *-pedantic*) ;;
+    *)  # hack around deficiencies in gcc and clang
+	#
+	AC_DEFINE 'while(x)' 'while( (x) != 0 )'
+	AC_DEFINE 'if(x)' 'if( (x) != 0 )'
+
+	if [ "$IS_CLANG" -o "$IS_GCC" ]; then
+	    AC_CC="$AC_CC -Wno-return-type -Wno-implicit-int"
+	fi ;;
+    esac
+fi
+
+
+
 
 if AC_CHECK_HEADERS gd.h; then
     AC_TEXT "#include <gd.h>"
@@ -42,19 +59,24 @@ AC_LIBRARY gdImageCreate -lgd || exit 1
 
 
 unset oformat
-if AC_CHECK_FUNCS gdImagePng; then
+comma=,
+if AC_QUIET AC_CHECK_FUNCS gdImagePng; then
     AC_DEFINE GD_SUPPORTS_PNG 1
-    oformat=1
+    oformat="png"
 fi
-if AC_CHECK_FUNCS gdImageJpeg; then
+if AC_QUIET AC_CHECK_FUNCS gdImageJpeg; then
     AC_DEFINE GD_SUPPORTS_JPEG 1
-    oformat=1
+    oformat="${oformat:+comma}jpeg"
 fi
-if AC_CHECK_FUNCS gdImageGif; then
+if AC_QUIET AC_CHECK_FUNCS gdImageGif; then
     AC_DEFINE GD_SUPPORTS_GIF 1
-    oformat=1
+    oformat="${oformat:+comma}gif"
 fi
 
 test "$oformat" || AC_FAIL "The copy of libgd here does not support GIF, JPG, or PNG format."
 
 AC_OUTPUT Makefile
+
+LOG
+LOG "$TARGET supports $oformat output"
+LOG
