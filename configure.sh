@@ -37,8 +37,6 @@ if [ "IS_BROKEN_CC" ]; then
 fi
 
 
-
-
 if AC_CHECK_HEADERS gd.h; then
     AC_TEXT "#include <gd.h>"
 elif AC_CHECK_HEADERS gd/gd.h; then
@@ -51,7 +49,7 @@ fi
 # shared library ALL OF THEM need to be linked in.
 echo "main() { }" > ngc$$.c
 for x in -lz -lpng -ljpeg -ltiff -lxpm -lwebp -limagequant -lfontconfig -lfreetype -lraqm; do
-    $AC_CC $AC_CFLAGS -o ngc$$ ngc$$.c $x && LIBS="$LIBS $x"
+    $AC_CC $AC_CFLAGS $AC_LDFLAGS -o ngc$$ ngc$$.c $x && LIBS="$LIBS $x"
 done
 rm -f ngc$$.c ngc$$
 
